@@ -24,3 +24,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.prose {
+  line-height: 1.75;
+  font-size: 16px;
+}
+
+.prose pre {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.prose code {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
+/* rehype-pretty-code adds data attributes */
+.prose pre [data-line] {
+  padding: 0 12px;
+}
+
+.prose pre code {
+  display: grid;
+}
