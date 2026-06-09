@@ -1,0 +1,439 @@
+---
+import type { createDB } from '../lib/db';
+import PromptModal from '../components/PromptModal.astro';
+
+const db   = Astro.locals.db as ReturnType<typeof createDB>;
+const auth = Astro.locals.isAuthenticated;
+
+const q    = Astro.url.searchParams.get('q') ?? undefined;
+const tags = Astro.url.searchParams.getAll('tags').filter(Boolean);
+const activeTagFilter = tags.length > 0 ? tags : undefined;
+const prompts = db.getPrompts({ q, tags: activeTagFilter });
+const allTags = db.getTags();
+
+const PREVIEW_LENGTH = 120;
+function preview(content: string) {
+  return content.length > PREVIEW_LENGTH
+    ? content.slice(0, PREVIEW_LENGTH) + '…'
+    : content;
+}
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prompt Library</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #111;
+        min-height: 100dvh;
+      }
+
+      /* ── Header ─────────────────────────────────────────────── */
+      .header {
+        background: #fff;
+        border-bottom: 1px solid #e2e2e2;
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+
+      .header__brand {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #111;
+        text-decoration: none;
+        white-space: nowrap;
+        margin-right: 0.5rem;
+      }
+
+      .search-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        min-width: 160px;
+      }
+
+      .search-bar input {
+        border: 1px solid #d1d1d1;
+        border-radius: 8px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.875rem;
+        width: 100%;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      .search-bar input:focus { border-color: #555; }
+
+      .search-bar button {
+        background: #111;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      /* Tag filter dropdown */
+      .tag-filter {
+        position: relative;
+      }
+
+      .tag-filter__toggle {
+        border: 1px solid #d1d1d1;
+        border-radius: 8px;
+        padding: 0.45rem 0.75rem;
+        font-size: 0.875rem;
+        background: #fff;
+        cursor: pointer;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .tag-filter__toggle[data-active="true"] {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
+
+      .tag-filter__menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        background: #fff;
+        border: 1px solid #d1d1d1;
+        border-radius: 10px;
+        padding: 0.5rem;
+        min-width: 160px;
+        max-height: 280px;
+        overflow-y: auto;
+        box-shadow: 0 4px 16px rgba(0,0,0,.1);
+        z-index: 10;
+        display: none;
+      }
+
+      .tag-filter__menu.is-open { display: block; }
+
+      .tag-filter__item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .tag-filter__item:hover { background: #f5f5f5; }
+
+      .tag-filter__item input { cursor: pointer; }
+
+      /* Header actions */
+      .header__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: auto;
+      }
+
+      .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 0.9rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .btn--primary { background: #111; color: #fff; }
+      .btn--primary:hover { opacity: 0.82; }
+      .btn--ghost {
+        background: transparent;
+        color: #555;
+        border: 1px solid #d1d1d1;
+      }
+      .btn--ghost:hover { background: #f5f5f5; }
+
+      /* ── Listing ─────────────────────────────────────────────── */
+      .listing {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem;
+      }
+
+      .listing__meta {
+        font-size: 0.875rem;
+        color: #777;
+        margin-bottom: 1rem;
+      }
+
+      .prompt-grid {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 4rem 1rem;
+        color: #888;
+        font-size: 0.9375rem;
+      }
+
+      /* ── Prompt Card ─────────────────────────────────────────── */
+      .prompt-card {
+        background: #fff;
+        border: 1px solid #e2e2e2;
+        border-radius: 12px;
+        padding: 1.1rem 1.1rem 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        transition: box-shadow 0.15s;
+      }
+
+      .prompt-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+
+      .prompt-card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .prompt-card__title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #111;
+        line-height: 1.35;
+      }
+
+      .prompt-card__actions {
+        display: flex;
+        gap: 0.4rem;
+      }
+
+      .prompt-card__copy,
+      .prompt-card__edit {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #999;
+        font-size: 0.9rem;
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+        flex-shrink: 0;
+        transition: color 0.15s;
+      }
+
+      .prompt-card__edit:hover { color: #333; }
+
+      .prompt-card__preview {
+        font-size: 0.8125rem;
+        color: #666;
+        line-height: 1.5;
+        flex: 1;
+      }
+
+      .prompt-card__tags {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .prompt-card__tag {
+        background: #f0f0f0;
+        border-radius: 99px;
+        padding: 0.15rem 0.55rem;
+        font-size: 0.75rem;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <a href="/" class="header__brand">Prompt Library</a>
+
+      <!-- Search bar -->
+      <form class="search-bar" method="get" action="/">
+        {tags && tags.map((t) => <input type="hidden" name="tags" value={t} />)}
+        <input
+          type="search"
+          name="q"
+          placeholder="Search prompts…"
+          value={q ?? ''}
+          aria-label="Search prompts"
+        />
+        <button type="submit">Search</button>
+      </form>
+
+      <!-- Tag filter -->
+      {allTags.length > 0 && (
+        <div class="tag-filter" id="tag-filter">
+          <button
+            type="button"
+            class="tag-filter__toggle"
+            id="tag-filter-toggle"
+            aria-haspopup="true"
+            aria-expanded="false"
+            data-active={tags && tags.length > 0 ? 'true' : 'false'}
+          >
+            Tags {tags && tags.length > 0 ? `(${tags.length})` : '▾'}
+          </button>
+          <form class="tag-filter__menu" id="tag-filter-menu" method="get" action="/">
+            {q && <input type="hidden" name="q" value={q} />}
+            {allTags.map((tag) => (
+              <label class="tag-filter__item">
+                <input
+                  type="checkbox"
+                  name="tags"
+                  value={tag}
+                  checked={tags?.includes(tag)}
+                  onchange="this.form.submit()"
+                />
+                {tag}
+              </label>
+            ))}
+          </form>
+        </div>
+      )}
+
+      <!-- Auth actions -->
+      <div class="header__actions">
+        {auth && (
+          <>
+            <button
+              type="button"
+              class="btn btn--primary"
+              onclick="window.openPromptModal()"
+            >
+              + New Prompt
+            </button>
+            <form method="POST" action="/api/logout" style="display:contents">
+              <button type="submit" class="btn btn--ghost">Sign out</button>
+            </form>
+          </>
+        )}
+        {!auth && (
+          <a href="/login" class="btn btn--ghost">Sign in</a>
+        )}
+      </div>
+    </header>
+
+    <main class="listing">
+      {(q || (tags && tags.length > 0)) && (
+        <p class="listing__meta">
+          {prompts.length} result{prompts.length !== 1 ? 's' : ''}
+          {q && <> for "<strong>{q}</strong>"</>}
+          {tags && tags.length > 0 && <> tagged <strong>{tags.join(', ')}</strong></>}
+          — <a href="/">Clear filters</a>
+        </p>
+      )}
+
+      {prompts.length === 0 ? (
+        <div class="empty-state">
+          {auth ? (
+            <p>No prompts yet. <button type="button" class="btn btn--primary" onclick="window.openPromptModal()">Create your first one</button></p>
+          ) : (
+            <p>No prompts found.</p>
+          )}
+        </div>
+      ) : (
+        <ul class="prompt-grid">
+          {prompts.map((prompt) => (
+            <li class="prompt-card">
+              <div class="prompt-card__header">
+                <h2 class="prompt-card__title">{prompt.title}</h2>
+                <div class="prompt-card__actions">
+                  <button
+                    type="button"
+                    class="prompt-card__copy"
+                    aria-label={`Copy ${prompt.title}`}
+                    data-content={prompt.content}
+                    title="Copy to clipboard"
+                  >
+                    ⎘
+                  </button>
+                  {auth && (
+                    <button
+                      type="button"
+                      class="prompt-card__edit"
+                      aria-label={`Edit ${prompt.title}`}
+                      data-prompt={JSON.stringify(prompt)}
+                      onclick="window.openPromptModal(JSON.parse(this.dataset.prompt))"
+                    >
+                      ✎
+                    </button>
+                  )}
+                </div>
+              </div>
+              <p class="prompt-card__preview">{preview(prompt.content)}</p>
+              {prompt.tags.length > 0 && (
+                <ul class="prompt-card__tags">
+                  {prompt.tags.map((tag) => (
+                    <li class="prompt-card__tag">{tag}</li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
+
+    {auth && <PromptModal />}
+
+    <script>
+      // Copy to clipboard
+      document.querySelectorAll('.prompt-card__copy').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const content = (btn as HTMLElement).dataset.content ?? '';
+          await navigator.clipboard.writeText(content);
+          const prev = btn.textContent;
+          btn.textContent = '✓';
+          setTimeout(() => { btn.textContent = prev; }, 1500);
+        });
+      });
+
+      // Tag filter dropdown toggle
+      const toggle = document.getElementById('tag-filter-toggle');
+      const menu   = document.getElementById('tag-filter-menu');
+      if (toggle && menu) {
+        toggle.addEventListener('click', () => {
+          const open = menu.classList.toggle('is-open');
+          toggle.setAttribute('aria-expanded', String(open));
+        });
+        document.addEventListener('click', (e) => {
+          if (!toggle.contains(e.target as Node) && !menu.contains(e.target as Node)) {
+            menu.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

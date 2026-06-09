@@ -1,0 +1,6 @@
+prompts.db
+prompts.db-shm
+prompts.db-wal
+.env
+dist/
+node_modules/
