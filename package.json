@@ -1,21 +1,39 @@
 {
-  "name": "@jechav/blog",
-  "version": "0.0.1",
+  "name": "jechav-site",
+  "version": "0.1.0",
   "private": true,
+<<<<<<< HEAD
   "workspaces": ["apps/*"],
+=======
+  "engines": {
+    "node": ">=24.11.0"
+  },
+>>>>>>> main
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@mdx-js/loader": "^3.1.1",
+    "@next/mdx": "^16.1.1",
+    "gray-matter": "^4.0.3",
+    "next": "16.1.1",
+    "next-mdx-remote": "^5.0.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "rehype-pretty-code": "^0.14.1",
+    "shiki": "^3.20.0"
   },
   "devDependencies": {
-    "@astrojs/mdx": "^0.10.0",
-    "@astrojs/rss": "^1.0.0",
-    "@astrojs/sitemap": "^1.0.0",
-    "astro": "^1.0.6",
-    "prettier": "^2.7.1",
-    "prettier-plugin-astro": "^0.5.0"
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
