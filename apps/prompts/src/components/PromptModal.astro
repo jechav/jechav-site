@@ -1,0 +1,466 @@
+---
+// No props — the modal is opened programmatically via openPromptModal()
+---
+
+<dialog id="prompt-modal" aria-labelledby="modal-heading">
+  <div class="modal-inner">
+    <h2 id="modal-heading" class="modal-heading">New Prompt</h2>
+
+    <form id="prompt-form" novalidate>
+      <input type="hidden" id="prompt-id" value="" />
+
+      <div class="field">
+        <label for="prompt-title">Title</label>
+        <input type="text" id="prompt-title" name="title" required autocomplete="off" />
+        <span class="field-error" id="title-error" hidden>Title is required.</span>
+      </div>
+
+      <div class="field">
+        <label for="prompt-content">Content</label>
+        <textarea id="prompt-content" name="content" rows="8" placeholder="Paste your prompt here…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Tags</label>
+        <div class="tag-input-wrapper" id="tag-wrapper">
+          <div class="tag-chips" id="tag-chips"></div>
+          <input
+            type="text"
+            id="tag-input"
+            autocomplete="off"
+            placeholder="Type a tag and press Enter…"
+            aria-autocomplete="list"
+            aria-controls="tag-suggestions"
+          />
+          <ul class="tag-suggestions" id="tag-suggestions" role="listbox" hidden></ul>
+        </div>
+        <input type="hidden" id="tags-hidden" name="tags" value="" />
+      </div>
+
+      <div class="modal-footer">
+        <div class="modal-footer__left">
+          <button type="button" id="delete-btn" class="btn btn--danger" hidden>Delete</button>
+          <div id="delete-confirm" class="delete-confirm" hidden>
+            <span>Delete this prompt?</span>
+            <button type="button" id="confirm-delete-btn" class="btn btn--danger">Yes, delete</button>
+            <button type="button" id="cancel-delete-btn" class="btn btn--ghost">Cancel</button>
+          </div>
+        </div>
+        <div class="modal-footer__right">
+          <button type="button" id="modal-cancel-btn" class="btn btn--ghost">Cancel</button>
+          <button type="submit" id="modal-submit-btn" class="btn btn--primary">Save</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<style>
+  dialog {
+    border: none;
+    border-radius: 14px;
+    padding: 0;
+    width: min(100% - 2rem, 560px);
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,.18);
+  }
+
+  dialog::backdrop {
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(2px);
+  }
+
+  .modal-inner {
+    padding: 1.75rem 1.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .modal-heading {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #111;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #444;
+  }
+
+  input[type="text"],
+  textarea {
+    border: 1px solid #d1d1d1;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+
+  input[type="text"]:focus,
+  textarea:focus { border-color: #555; }
+
+  .field-error {
+    font-size: 0.8125rem;
+    color: #c0392b;
+  }
+
+  /* Tag input */
+  .tag-input-wrapper {
+    border: 1px solid #d1d1d1;
+    border-radius: 8px;
+    padding: 0.4rem 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+    position: relative;
+    cursor: text;
+    transition: border-color 0.15s;
+  }
+
+  .tag-input-wrapper:focus-within { border-color: #555; }
+
+  .tag-chips {
+    display: contents;
+  }
+
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #f0f0f0;
+    border-radius: 99px;
+    padding: 0.2rem 0.6rem 0.2rem 0.5rem;
+    font-size: 0.8125rem;
+    color: #333;
+    white-space: nowrap;
+  }
+
+  .tag-chip__remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #666;
+    padding: 0;
+    line-height: 1;
+  }
+
+  #tag-input {
+    border: none;
+    outline: none;
+    padding: 0.2rem 0.25rem;
+    font-size: 0.875rem;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .tag-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #d1d1d1;
+    border-radius: 8px;
+    list-style: none;
+    padding: 0.25rem 0;
+    z-index: 10;
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .tag-suggestions li {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: #222;
+  }
+
+  .tag-suggestions li:hover,
+  .tag-suggestions li[aria-selected="true"] {
+    background: #f5f5f5;
+  }
+
+  /* Footer */
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid #efefef;
+    margin-top: 0.5rem;
+  }
+
+  .modal-footer__left,
+  .modal-footer__right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .delete-confirm {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #555;
+  }
+
+  /* Buttons */
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 0.55rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn--primary { background: #111; color: #fff; }
+  .btn--primary:hover { opacity: 0.82; }
+
+  .btn--ghost {
+    background: transparent;
+    color: #444;
+    border: 1px solid #d1d1d1;
+  }
+  .btn--ghost:hover { background: #f5f5f5; }
+
+  .btn--danger { background: #c0392b; color: #fff; }
+  .btn--danger:hover { opacity: 0.85; }
+</style>
+
+<script>
+  const modal        = document.getElementById('prompt-modal') as HTMLDialogElement;
+  const form         = document.getElementById('prompt-form') as HTMLFormElement;
+  const idInput      = document.getElementById('prompt-id') as HTMLInputElement;
+  const titleInput   = document.getElementById('prompt-title') as HTMLInputElement;
+  const contentInput = document.getElementById('prompt-content') as HTMLTextAreaElement;
+  const tagInput     = document.getElementById('tag-input') as HTMLInputElement;
+  const tagsHidden   = document.getElementById('tags-hidden') as HTMLInputElement;
+  const tagChips     = document.getElementById('tag-chips') as HTMLElement;
+  const suggestions  = document.getElementById('tag-suggestions') as HTMLUListElement;
+  const heading      = document.getElementById('modal-heading') as HTMLHeadingElement;
+  const deleteBtn    = document.getElementById('delete-btn') as HTMLButtonElement;
+  const deleteConfirm = document.getElementById('delete-confirm') as HTMLElement;
+  const confirmDeleteBtn = document.getElementById('confirm-delete-btn') as HTMLButtonElement;
+  const cancelDeleteBtn  = document.getElementById('cancel-delete-btn') as HTMLButtonElement;
+  const cancelBtn    = document.getElementById('modal-cancel-btn') as HTMLButtonElement;
+  const submitBtn    = document.getElementById('modal-submit-btn') as HTMLButtonElement;
+  const titleError   = document.getElementById('title-error') as HTMLElement;
+
+  let activeTags: string[] = [];
+  let suggestTimeout: ReturnType<typeof setTimeout>;
+
+  // ── Tag chip management ──────────────────────────────────────────────────
+
+  function syncTagsHidden() {
+    tagsHidden.value = activeTags.join(',');
+  }
+
+  function renderChips() {
+    tagChips.querySelectorAll('.tag-chip').forEach((el) => el.remove());
+    activeTags.forEach((tag) => {
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = `${tag} <button type="button" class="tag-chip__remove" aria-label="Remove ${tag}">×</button>`;
+      chip.querySelector('button')!.addEventListener('click', () => {
+        activeTags = activeTags.filter((t) => t !== tag);
+        renderChips();
+        syncTagsHidden();
+      });
+      tagChips.appendChild(chip);
+    });
+    syncTagsHidden();
+  }
+
+  function addTag(tag: string) {
+    const trimmed = tag.trim().toLowerCase();
+    if (trimmed && !activeTags.includes(trimmed)) {
+      activeTags.push(trimmed);
+      renderChips();
+    }
+    tagInput.value = '';
+    hideSuggestions();
+  }
+
+  // ── Tag autocomplete ─────────────────────────────────────────────────────
+
+  function hideSuggestions() {
+    suggestions.hidden = true;
+    suggestions.innerHTML = '';
+  }
+
+  async function fetchSuggestions(q: string) {
+    if (!q) { hideSuggestions(); return; }
+    const res = await fetch(`/api/tags?q=${encodeURIComponent(q)}`);
+    const tags: string[] = await res.json();
+    const filtered = tags.filter((t) => !activeTags.includes(t));
+    if (!filtered.length) { hideSuggestions(); return; }
+
+    suggestions.innerHTML = '';
+    filtered.forEach((tag) => {
+      const li = document.createElement('li');
+      li.textContent = tag;
+      li.setAttribute('role', 'option');
+      li.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // prevent blur before click
+        addTag(tag);
+      });
+      suggestions.appendChild(li);
+    });
+    suggestions.hidden = false;
+  }
+
+  tagInput.addEventListener('input', () => {
+    clearTimeout(suggestTimeout);
+    suggestTimeout = setTimeout(() => fetchSuggestions(tagInput.value), 200);
+  });
+
+  tagInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(tagInput.value);
+    }
+    if (e.key === 'Escape') hideSuggestions();
+  });
+
+  tagInput.addEventListener('blur', () => {
+    setTimeout(hideSuggestions, 150);
+  });
+
+  // ── Open / close ─────────────────────────────────────────────────────────
+
+  function resetForm() {
+    idInput.value = '';
+    titleInput.value = '';
+    contentInput.value = '';
+    tagInput.value = '';
+    activeTags = [];
+    renderChips();
+    titleError.hidden = true;
+    deleteBtn.hidden = true;
+    deleteConfirm.hidden = true;
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save';
+  }
+
+  function closeModal() {
+    modal.close();
+    resetForm();
+  }
+
+  // Exposed globally so Prompt Cards and the New Prompt button can call it
+  (window as any).openPromptModal = function (prompt?: {
+    id: number; title: string; content: string; tags: string[];
+  }) {
+    resetForm();
+    if (prompt) {
+      heading.textContent = 'Edit Prompt';
+      idInput.value = String(prompt.id);
+      titleInput.value = prompt.title;
+      contentInput.value = prompt.content;
+      activeTags = [...prompt.tags];
+      renderChips();
+      deleteBtn.hidden = false;
+    } else {
+      heading.textContent = 'New Prompt';
+    }
+    modal.showModal();
+    titleInput.focus();
+  };
+
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal(); // click backdrop
+  });
+
+  // ── Delete ───────────────────────────────────────────────────────────────
+
+  deleteBtn.addEventListener('click', () => {
+    deleteBtn.hidden = true;
+    deleteConfirm.hidden = false;
+  });
+
+  cancelDeleteBtn.addEventListener('click', () => {
+    deleteConfirm.hidden = true;
+    deleteBtn.hidden = false;
+  });
+
+  confirmDeleteBtn.addEventListener('click', async () => {
+    const id = idInput.value;
+    confirmDeleteBtn.disabled = true;
+    const res = await fetch(`/api/prompts/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      closeModal();
+      window.location.reload();
+    } else {
+      confirmDeleteBtn.disabled = false;
+      alert('Delete failed. Please try again.');
+    }
+  });
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    titleError.hidden = true;
+
+    if (!titleInput.value.trim()) {
+      titleError.hidden = false;
+      titleInput.focus();
+      return;
+    }
+
+    // Commit any partially typed tag
+    if (tagInput.value.trim()) addTag(tagInput.value);
+
+    const id = idInput.value;
+    const isEdit = Boolean(id);
+    const url    = isEdit ? `/api/prompts/${id}` : '/api/prompts';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = isEdit ? 'Saving…' : 'Creating…';
+
+    const body = new URLSearchParams({
+      title: titleInput.value.trim(),
+      content: contentInput.value,
+      tags: tagsHidden.value,
+    });
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+
+    if (res.ok) {
+      closeModal();
+      window.location.reload();
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save';
+      alert(res.status === 400 ? 'Title is required.' : 'Something went wrong. Please try again.');
+    }
+  });
+</script>

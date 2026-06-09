@@ -1,0 +1,117 @@
+---
+const isAuthenticated = Astro.locals.isAuthenticated;
+if (isAuthenticated) return Astro.redirect('/');
+
+const hasError = Astro.url.searchParams.has('error');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login — Prompt Library</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: system-ui, sans-serif;
+        background: #f5f5f5;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+      }
+
+      .card {
+        background: #fff;
+        border: 1px solid #e2e2e2;
+        border-radius: 12px;
+        padding: 2.5rem 2rem;
+        width: min(100%, 360px);
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .card__title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #444;
+      }
+
+      input[type="password"] {
+        border: 1px solid #d1d1d1;
+        border-radius: 8px;
+        padding: 0.6rem 0.75rem;
+        font-size: 1rem;
+        width: 100%;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      input[type="password"]:focus {
+        border-color: #555;
+      }
+
+      .error {
+        font-size: 0.875rem;
+        color: #c0392b;
+        background: #fdf0ef;
+        border: 1px solid #f5c6c3;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+      }
+
+      button[type="submit"] {
+        background: #111;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.65rem 1.25rem;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        width: 100%;
+        transition: opacity 0.15s;
+      }
+
+      button[type="submit"]:hover { opacity: 0.85; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1 class="card__title">Prompt Library</h1>
+
+      {hasError && (
+        <p class="error" role="alert">Incorrect password. Try again.</p>
+      )}
+
+      <form method="POST" action="/api/login">
+        <div class="field">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            autofocus
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" style="margin-top: 1rem;">Sign in</button>
+      </form>
+    </div>
+  </body>
+</html>
