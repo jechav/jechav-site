@@ -1,0 +1,24 @@
+# Caddyfile snippets for jechav-site monorepo
+#
+# Copy these blocks into your server's Caddyfile (usually /etc/caddy/Caddyfile
+# or /etc/caddy/conf.d/) and reload with: systemctl reload caddy
+#
+# Each app runs as a Docker container. Caddy (on the host) proxies to the
+# container's published port on localhost.
+#
+# To add a future subdomain app:
+#   1. Add a new service to docker-compose.yml with a new host port
+#   2. Add a block here following the same pattern
+
+jechav.me {
+    reverse_proxy localhost:3002
+}
+
+prompts.jechav.me {
+    reverse_proxy localhost:4321
+}
+
+# Example for a future app at notes.jechav.me on port 5000:
+# notes.jechav.me {
+#     reverse_proxy localhost:5000
+# }

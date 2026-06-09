@@ -1,0 +1,9 @@
+.git
+node_modules
+dist
+prompts.db
+prompts.db-shm
+prompts.db-wal
+.env*
+.DS_Store
+*.md

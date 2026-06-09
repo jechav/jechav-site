@@ -1,0 +1,23 @@
+services:
+  jechav-site:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3000"
+    restart: unless-stopped
+
+  prompts:
+    build:
+      context: ./apps/prompts
+      dockerfile: Dockerfile
+    ports:
+      - "4321:4321"
+    env_file:
+      - ./apps/prompts/.env
+    volumes:
+      - prompts-db:/app/data
+    restart: unless-stopped
+
+volumes:
+  prompts-db:
