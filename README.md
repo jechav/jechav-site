@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# jechav-site
 
-## Getting Started
+A personal website with blog and other subprojects.
 
-First, run the development server:
+## Project Structure
+
+This is a **monorepo** using npm workspaces with multiple applications:
+
+- **Root**: Next.js 16 app serving the main site at `jechav.me`
+  - Includes blog posts using MDX + gray-matter for frontmatter
+  - Styled with Tailwind CSS v4
+  
+- **`apps/prompts`**: Astro 6 SSR app at `prompts.jechav.me`
+  - Standalone Node.js adapter for server-side rendering
+  - SQLite database for persistent data
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework (Root) | Next.js 16.1.1 with App Router |
+| Framework (Subapps) | Astro 6.4.5 |
+| React | v19.2.3 |
+| Styling | Tailwind CSS v4 |
+| Content | MDX, gray-matter (frontmatter), rehype-pretty-code |
+| Database | SQLite (prompts app) |
+| Runtime | Node.js 24+ |
+
+## Development
+
+### Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Running Locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Root Next.js app** (localhost:3000):
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Specific workspace** (e.g., prompts at localhost:4321):
+```bash
+npm run dev -w @jechav/prompts
+```
 
-## Learn More
+### Building
 
-To learn more about Next.js, take a look at the following resources:
+Build root app:
+```bash
+npm run build
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Build specific workspace:
+```bash
+npm run build -w @jechav/prompts
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+### Local Docker Testing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Build and run all services locally using docker-compose:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+docker compose up --build
+```
+
+- Next.js app: http://localhost:3002
+- Prompts app: http://localhost:4321
+
+### Production Deployment (DigitalOcean)
+
+**One-time setup:**
+1. Clone repo on droplet (e.g. `/srv/jechav-site`)
+2. Create `apps/prompts/.env` from `.env.example`, set `AUTH_PASSWORD` and `DATABASE_PATH=/app/data/prompts.db`
+3. Merge Caddy blocks from `deploy/Caddyfile.snippet` into server Caddyfile
+4. Set GitHub secrets: `DROPLET_HOST`, `DROPLET_USER`, `SSH_PRIVATE_KEY`, `REPO_PATH`
+
+**Automatic deployment:**
+- Push to `main` branch → GitHub Actions workflow triggers
+- Workflow SSH's into droplet, pulls latest code, runs `docker compose up --build -d`
+
+### Adding New Subapps
+
+1. Create app in `apps/myapp/` with `package.json` and `Dockerfile`
+2. Add service to `docker-compose.yml` with new port
+3. Add Caddyfile block in `deploy/Caddyfile.snippet` for the subdomain
+4. Merge into `main` — deployment is automatic
+
+## Scripts
+
+```bash
+npm run dev      # Start root Next.js dev server
+npm run build    # Build root app for production
+npm run start    # Start root app in production mode
+npm run lint     # Run ESLint
+```
+
+See `package.json` for full workspace scripts.
+
