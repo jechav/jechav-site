@@ -18,6 +18,7 @@ jobs:
           script: |
             set -e
             cd ${{ secrets.REPO_PATH }}
+            export GIT_SSH_COMMAND="ssh -i /root/.ssh/jechav-site-deploy -o IdentitiesOnly=yes"
             git pull origin main
             docker compose up --build -d
             # Remove dangling images left by the build
