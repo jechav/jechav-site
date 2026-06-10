@@ -1,6 +1,7 @@
 ---
 import type { createDB } from '../lib/db';
 import PromptModal from '../components/PromptModal.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 
 const db   = Astro.locals.db as ReturnType<typeof createDB>;
 const auth = Astro.locals.isAuthenticated;
@@ -19,11 +20,8 @@ function preview(content: string) {
 }
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Prompt Library</title>
+<BaseLayout title="Prompt Library">
+  <Fragment slot="head">
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -273,8 +271,7 @@ function preview(content: string) {
         color: #555;
       }
     </style>
-  </head>
-  <body>
+  </Fragment>
     <header class="header">
       <a href="/" class="header__brand">Prompt Library</a>
 
@@ -435,5 +432,4 @@ function preview(content: string) {
         });
       }
     </script>
-  </body>
-</html>
+</BaseLayout>

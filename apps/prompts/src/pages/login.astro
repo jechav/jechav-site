@@ -1,15 +1,14 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
 const isAuthenticated = Astro.locals.isAuthenticated;
 if (isAuthenticated) return Astro.redirect('/');
 
 const hasError = Astro.url.searchParams.has('error');
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login — Prompt Library</title>
+<BaseLayout title="Login — Prompt Library">
+  <Fragment slot="head">
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -85,11 +84,10 @@ const hasError = Astro.url.searchParams.has('error');
         width: 100%;
         transition: opacity 0.15s;
       }
-
       button[type="submit"]:hover { opacity: 0.85; }
     </style>
-  </head>
-  <body>
+    </style>
+  </Fragment>
     <div class="card">
       <h1 class="card__title">Prompt Library</h1>
 
@@ -113,5 +111,4 @@ const hasError = Astro.url.searchParams.has('error');
         <button type="submit" style="margin-top: 1rem;">Sign in</button>
       </form>
     </div>
-  </body>
-</html>
+</BaseLayout>
