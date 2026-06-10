@@ -77,7 +77,9 @@ docker compose up --build
 1. Clone repo on droplet (e.g. `/srv/jechav-site`)
 2. Create `apps/prompts/.env` from `.env.example`, set `AUTH_PASSWORD` and `DATABASE_PATH=/app/data/prompts.db`
 3. Merge Caddy blocks from `deploy/Caddyfile.snippet` into server Caddyfile
-4. Set GitHub secrets: `DROPLET_HOST`, `DROPLET_USER`, `SSH_PRIVATE_KEY`, `REPO_PATH`
+4. Ensure the droplet user can `git pull` via SSH (deploy key on server, e.g. `~/.ssh/jechav-site-deploy`)
+5. Set GitHub secrets: `DROPLET_HOST`, `DROPLET_USER`, `SSH_PRIVATE_KEY`, `REPO_PATH`, `PATH_SSH_GH_KEY`
+   - `PATH_SSH_GH_KEY` should be the absolute path to the GitHub deploy key file on the droplet (for example, `/home/deploy/.ssh/jechav-site-deploy`)
 
 **Automatic deployment:**
 - Push to `main` branch → GitHub Actions workflow triggers
@@ -100,4 +102,3 @@ npm run lint     # Run ESLint
 ```
 
 See `package.json` for full workspace scripts.
-
