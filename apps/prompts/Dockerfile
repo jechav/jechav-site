@@ -16,7 +16,7 @@ FROM node:24-alpine AS runner
 WORKDIR /app
 
 # Need build tools to load the pre-compiled native addon on musl libc
-RUN apk add --no-cache libstdc++
+RUN apk add --no-cache libstdc++ su-exec
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
@@ -28,11 +28,11 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Copy Astro standalone output and production node_modules (incl. native .node files)
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 
-RUN chown -R astro:nodejs /app
-
-USER astro
+RUN chmod +x /docker-entrypoint.sh && \
+    mkdir -p /app/data && \
+    chown -R astro:nodejs /app
 EXPOSE 4321
 
-CMD ["node", "./dist/server/entry.mjs"]
-
+ENTRYPOINT ["/docker-entrypoint.sh"]
