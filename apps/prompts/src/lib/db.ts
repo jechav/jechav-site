@@ -1,4 +1,6 @@
 import Database from 'better-sqlite3';
+import { mkdirSync } from 'fs';
+import { dirname } from 'path';
 
 export interface Prompt {
   id: number;
@@ -34,6 +36,7 @@ const SCHEMA = `
 `;
 
 export function createDB(filePath: string) {
+  mkdirSync(dirname(filePath), { recursive: true });
   const db = new Database(filePath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
