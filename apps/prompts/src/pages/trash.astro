@@ -1,0 +1,289 @@
+---
+import type { createDB } from '../lib/db';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const auth = Astro.locals.isAuthenticated;
+if (!auth) {
+  return Astro.redirect('/login');
+}
+
+const db = Astro.locals.db as ReturnType<typeof createDB>;
+const deletedPrompts = db.getDeletedPrompts();
+
+const PREVIEW_LENGTH = 120;
+function preview(content: string) {
+  return content.length > PREVIEW_LENGTH
+    ? content.slice(0, PREVIEW_LENGTH) + '…'
+    : content;
+}
+---
+
+<BaseLayout title="Trash">
+  <Fragment slot="head">
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: system-ui, sans-serif;
+        background: #f5f5f5;
+        color: #111;
+        min-height: 100dvh;
+      }
+
+      .header {
+        background: #fff;
+        border-bottom: 1px solid #e2e2e2;
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+
+      .header__brand {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #111;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .header__spacer {
+        flex: 1;
+      }
+
+      .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 0.9rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .btn--ghost {
+        background: transparent;
+        color: #555;
+        border: 1px solid #d1d1d1;
+      }
+      .btn--ghost:hover { background: #f5f5f5; }
+
+      .listing {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem;
+      }
+
+      .listing__title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #111;
+      }
+
+      .listing__desc {
+        font-size: 0.875rem;
+        color: #666;
+        margin-bottom: 1.5rem;
+      }
+
+      .prompt-grid {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 4rem 1rem;
+        color: #888;
+        font-size: 0.9375rem;
+      }
+
+      .prompt-card {
+        background: #fff;
+        border: 1px solid #e2e2e2;
+        border-radius: 12px;
+        padding: 1.1rem 1.1rem 0.9rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        transition: box-shadow 0.15s;
+      }
+
+      .prompt-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+
+      .prompt-card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .prompt-card__title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #111;
+        line-height: 1.35;
+      }
+
+      .prompt-card__actions {
+        display: flex;
+        gap: 0.4rem;
+      }
+
+      .prompt-card__btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #999;
+        font-size: 0.9rem;
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+        flex-shrink: 0;
+        transition: color 0.15s;
+      }
+
+      .prompt-card__btn:hover { color: #333; }
+
+      .prompt-card__preview {
+        font-size: 0.8125rem;
+        color: #666;
+        line-height: 1.5;
+        flex: 1;
+      }
+
+      .prompt-card__tags {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .prompt-card__tag {
+        background: #f0f0f0;
+        border-radius: 99px;
+        padding: 0.15rem 0.55rem;
+        font-size: 0.75rem;
+        color: #555;
+      }
+    </style>
+  </Fragment>
+
+  <header class="header">
+    <a href="/" class="header__brand">← Back to Library</a>
+    <div class="header__spacer"></div>
+  </header>
+
+  <main class="listing">
+    <h1 class="listing__title">Trash</h1>
+    <p class="listing__desc">Deleted prompts can be restored or permanently removed.</p>
+
+    {deletedPrompts.length === 0 ? (
+      <div class="empty-state">
+        <p>No deleted prompts. You can rest easy!</p>
+      </div>
+    ) : (
+      <ul class="prompt-grid">
+        {deletedPrompts.map((prompt) => (
+          <li class="prompt-card">
+            <div class="prompt-card__header">
+              <h2 class="prompt-card__title">{prompt.title}</h2>
+              <div class="prompt-card__actions">
+                <button
+                  type="button"
+                  class="prompt-card__btn"
+                  aria-label={`Restore ${prompt.title}`}
+                  data-id={prompt.id}
+                  data-action="restore"
+                  title="Restore prompt"
+                >
+                  ↺
+                </button>
+                <button
+                  type="button"
+                  class="prompt-card__btn"
+                  aria-label={`Delete permanently ${prompt.title}`}
+                  data-id={prompt.id}
+                  data-action="delete"
+                  title="Delete permanently"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <p class="prompt-card__preview">{preview(prompt.content)}</p>
+            {prompt.tags.length > 0 && (
+              <ul class="prompt-card__tags">
+                {prompt.tags.map((tag) => (
+                  <li class="prompt-card__tag">{tag}</li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    )}
+  </main>
+
+  <script>
+    function handleAction(btn: HTMLElement) {
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+
+      if (!id || !action) return;
+
+      if (action === 'restore') {
+        performRestore(Number(id), btn);
+      } else if (action === 'delete') {
+        if (confirm('Are you sure? This cannot be undone.')) {
+          performDelete(Number(id), btn);
+        }
+      }
+    }
+
+    async function performRestore(id: number, btn: HTMLElement) {
+      try {
+        const res = await fetch(`/api/prompts/${id}/restore`, { method: 'POST' });
+        if (res.ok) {
+          btn.closest('.prompt-card')?.remove();
+          if (document.querySelectorAll('.prompt-card').length === 0) {
+            location.reload();
+          }
+        } else {
+          alert('Failed to restore prompt');
+        }
+      } catch (err) {
+        alert('Error restoring prompt');
+      }
+    }
+
+    async function performDelete(id: number, btn: HTMLElement) {
+      try {
+        const res = await fetch(`/api/prompts/${id}/permanent-delete`, { method: 'DELETE' });
+        if (res.ok) {
+          btn.closest('.prompt-card')?.remove();
+          if (document.querySelectorAll('.prompt-card').length === 0) {
+            location.reload();
+          }
+        } else {
+          alert('Failed to delete prompt');
+        }
+      } catch (err) {
+        alert('Error deleting prompt');
+      }
+    }
+
+    document.querySelectorAll('.prompt-card__btn').forEach((btn) => {
+      btn.addEventListener('click', () => handleAction(btn));
+    });
+  </script>
+</BaseLayout>

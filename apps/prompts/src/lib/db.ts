@@ -16,7 +16,8 @@ const SCHEMA = `
     title      TEXT    NOT NULL,
     content    TEXT    NOT NULL,
     created_at TEXT    NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    updated_at TEXT    NOT NULL DEFAULT (datetime('now')),
+    deleted_at TEXT
   );
 
   CREATE TABLE IF NOT EXISTS tags (
@@ -41,6 +42,12 @@ export function createDB(filePath: string) {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.exec(SCHEMA);
+
+  // Migrate existing databases: add deleted_at column if it doesn't exist
+  const hasDeletedAt = db.prepare(`PRAGMA table_info(prompts)`).all().some((col: any) => col.name === 'deleted_at');
+  if (!hasDeletedAt) {
+    db.exec(`ALTER TABLE prompts ADD COLUMN deleted_at TEXT;`);
+  }
 
   function upsertTags(names: string[]): number[] {
     const insert = db.prepare(`INSERT OR IGNORE INTO tags (name) VALUES (?)`);
@@ -67,7 +74,7 @@ export function createDB(filePath: string) {
 
   function getPrompts(opts: { q?: string; tags?: string[] } = {}): Prompt[] {
     const { q, tags } = opts;
-    const conditions: string[] = [];
+    const conditions: string[] = ['p.deleted_at IS NULL'];
     const bindings: (string | number)[] = [];
 
     if (q) {
@@ -85,7 +92,7 @@ export function createDB(filePath: string) {
       bindings.push(...tags);
     }
 
-    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const where = `WHERE ${conditions.join(' AND ')}`;
 
     const rows = db.prepare(`
       SELECT p.id, p.title, p.content, p.created_at,
@@ -110,9 +117,44 @@ export function createDB(filePath: string) {
   function deletePrompt(id: number): boolean {
     const exists = db.prepare(`SELECT id FROM prompts WHERE id = ?`).get(id);
     if (!exists) return false;
+    db.prepare(`UPDATE prompts SET deleted_at = datetime('now') WHERE id = ?`).run(id);
+    return true;
+  }
+
+  function restorePrompt(id: number): boolean {
+    const exists = db.prepare(`SELECT id FROM prompts WHERE id = ? AND deleted_at IS NOT NULL`).get(id);
+    if (!exists) return false;
+    db.prepare(`UPDATE prompts SET deleted_at = NULL WHERE id = ?`).run(id);
+    return true;
+  }
+
+  function permanentlyDeletePrompt(id: number): boolean {
+    const exists = db.prepare(`SELECT id FROM prompts WHERE id = ?`).get(id);
+    if (!exists) return false;
     db.prepare(`DELETE FROM prompts_fts WHERE rowid = ?`).run(id);
     db.prepare(`DELETE FROM prompts WHERE id = ?`).run(id);
     return true;
+  }
+
+  function getDeletedPrompts(): Prompt[] {
+    const rows = db.prepare(`
+      SELECT p.id, p.title, p.content, p.created_at,
+             GROUP_CONCAT(t.name) AS tag_names
+      FROM   prompts p
+      LEFT   JOIN prompt_tags pt ON pt.prompt_id = p.id
+      LEFT   JOIN tags t         ON t.id = pt.tag_id
+      WHERE  p.deleted_at IS NOT NULL
+      GROUP  BY p.id
+      ORDER  BY p.deleted_at DESC
+    `).all() as { id: number; title: string; content: string; created_at: string; tag_names: string | null }[];
+
+    return rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      content: row.content,
+      createdAt: row.created_at,
+      tags: row.tag_names ? row.tag_names.split(',') : [],
+    }));
   }
 
   function updatePrompt(id: number, title: string, content: string, tags: string[]): Prompt | null {
@@ -143,5 +185,5 @@ export function createDB(filePath: string) {
     return (db.prepare(`SELECT name FROM tags ORDER BY name`).all() as { name: string }[]).map((r) => r.name);
   }
 
-  return { createPrompt, getPrompts, updatePrompt, deletePrompt, getTags };
+  return { createPrompt, getPrompts, updatePrompt, deletePrompt, restorePrompt, permanentlyDeletePrompt, getDeletedPrompts, getTags };
 }
