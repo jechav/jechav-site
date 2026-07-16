@@ -374,6 +374,7 @@
     id: number; title: string; content: string; tags: string[];
   }) {
     resetForm();
+    modal.showModal();
     if (prompt) {
       heading.textContent = 'Edit Prompt';
       idInput.value = String(prompt.id);
@@ -385,7 +386,6 @@
     } else {
       heading.textContent = 'New Prompt';
     }
-    modal.showModal();
     titleInput.focus();
   };
 
