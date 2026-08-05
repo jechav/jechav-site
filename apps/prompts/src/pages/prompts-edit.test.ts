@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createAuth } from '../lib/auth';
 import { createDB } from '../lib/db';
-import { PUT } from './api/prompts.[id]';
+import { PUT } from './api/prompts/[id]';
 
 const TEST_PASSWORD = 'test-password';
 const auth = createAuth(TEST_PASSWORD);
