@@ -201,6 +201,11 @@ function preview(content: string) {
         font-size: 0.9375rem;
       }
 
+      .empty-state__action {
+        display: inline-flex;
+        margin-top: 0.75rem;
+      }
+
       /* ── Prompt Card ─────────────────────────────────────────── */
       .prompt-card {
         background: #fff;
@@ -355,7 +360,10 @@ function preview(content: string) {
       {prompts.length === 0 ? (
         <div class="empty-state">
           {auth ? (
-            <p>No prompts yet. <button type="button" class="btn btn--primary" onclick="window.openPromptModal()">Create your first one</button></p>
+            <>
+              <p>No prompts yet.</p>
+              <button type="button" class="btn btn--primary empty-state__action" onclick="window.openPromptModal()">Create your first one</button>
+            </>
           ) : (
             <p>No prompts found.</p>
           )}

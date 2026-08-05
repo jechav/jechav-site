@@ -53,6 +53,16 @@ describe('Listing page', () => {
     expect(html).toBeTruthy();
   });
 
+  it('stacks the authenticated empty-state message and action', async () => {
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(IndexPage, {
+      locals: { db, isAuthenticated: true },
+    });
+
+    expect(html).toMatch(/<p[^>]*>No prompts yet\.<\/p>/);
+    expect(html).toMatch(/class="btn btn--primary empty-state__action"/);
+  });
+
   it('keeps delete confirmation controls hidden until deletion is selected', () => {
     const modalSource = readFileSync(
       new URL('../components/PromptModal.astro', import.meta.url),
