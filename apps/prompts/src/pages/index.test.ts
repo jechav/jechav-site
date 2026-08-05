@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDB } from '../lib/db';
@@ -51,5 +51,14 @@ describe('Listing page', () => {
   it('renders without error when the library has no Prompts', async () => {
     const html = await renderListing(db);
     expect(html).toBeTruthy();
+  });
+
+  it('keeps delete confirmation controls hidden until deletion is selected', () => {
+    const modalSource = readFileSync(
+      new URL('../components/PromptModal.astro', import.meta.url),
+      'utf8',
+    );
+
+    expect(modalSource).toContain('.delete-confirm[hidden] { display: none; }');
   });
 });
