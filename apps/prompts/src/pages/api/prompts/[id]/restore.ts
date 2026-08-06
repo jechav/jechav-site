@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
-import type { createAuth } from '../../../lib/auth';
-import type { createDB } from '../../../lib/db';
+import type { createAuth } from '../../../../lib/auth';
+import type { createDB } from '../../../../lib/db';
 import { requireAuth } from '../../prompts';
 
 export const POST: APIRoute = ({ request, locals, params }) => {
