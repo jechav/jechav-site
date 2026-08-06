@@ -75,17 +75,6 @@ function preview(content: string) {
 
       .search-bar input:focus { border-color: #555; }
 
-      .search-bar button {
-        background: #111;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        padding: 0.45rem 0.85rem;
-        font-size: 0.875rem;
-        cursor: pointer;
-        white-space: nowrap;
-      }
-
       /* Tag filter dropdown */
       .tag-filter {
         position: relative;
@@ -290,7 +279,6 @@ function preview(content: string) {
           value={q ?? ''}
           aria-label="Search prompts"
         />
-        <button type="submit">Search</button>
       </form>
 
       <!-- Tag filter -->
@@ -424,6 +412,59 @@ function preview(content: string) {
           setTimeout(() => { btn.textContent = prev; }, 1500);
         });
       });
+
+      // Search input auto-submit
+      const searchForm = document.querySelector('.search-bar');
+      const searchInput = searchForm?.querySelector('input[name="q"]');
+      if (searchForm instanceof HTMLFormElement && searchInput instanceof HTMLInputElement) {
+        const MIN_QUERY_LENGTH = 2;
+        const SEARCH_DEBOUNCE_MS = 500;
+        let debounceId: number | undefined;
+        let lastSubmittedQuery = searchInput.value.trim();
+
+        const normalizeQuery = () => searchInput.value.trim();
+        const isSearchableQuery = (query: string) => query.length === 0 || query.length >= MIN_QUERY_LENGTH;
+        const shouldSubmitQuery = (query: string) => query !== lastSubmittedQuery;
+        const buildSearchUrl = (query: string) => {
+          const params = new URLSearchParams();
+          const formData = new FormData(searchForm);
+
+          for (const [key, value] of formData.entries()) {
+            if (key === 'q') continue;
+            const asString = value.toString();
+            if (asString) params.append(key, asString);
+          }
+
+          if (query.length > 0) params.set('q', query);
+          const queryString = params.toString();
+          return queryString ? `${searchForm.action}?${queryString}` : searchForm.action;
+        };
+
+        const submitAutoSearch = () => {
+          const query = normalizeQuery();
+          if (!isSearchableQuery(query) || !shouldSubmitQuery(query)) return;
+          lastSubmittedQuery = query;
+          window.location.replace(buildSearchUrl(query));
+        };
+
+        searchInput.addEventListener('input', () => {
+          window.clearTimeout(debounceId);
+          debounceId = window.setTimeout(submitAutoSearch, SEARCH_DEBOUNCE_MS);
+        });
+
+        searchForm.addEventListener('submit', (event) => {
+          window.clearTimeout(debounceId);
+          const query = normalizeQuery();
+          searchInput.value = query;
+
+          if (!isSearchableQuery(query) || !shouldSubmitQuery(query)) {
+            event.preventDefault();
+            return;
+          }
+
+          lastSubmittedQuery = query;
+        });
+      }
 
       // Tag filter dropdown toggle
       const toggle = document.getElementById('tag-filter-toggle');
