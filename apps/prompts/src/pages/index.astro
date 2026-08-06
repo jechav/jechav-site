@@ -75,15 +75,14 @@ function preview(content: string) {
 
       .search-bar input:focus { border-color: #555; }
 
-      .search-bar button {
-        background: #111;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        padding: 0.45rem 0.85rem;
-        font-size: 0.875rem;
-        cursor: pointer;
-        white-space: nowrap;
+      .search-bar input.is-bouncing {
+        animation: search-bounce 0.3s ease;
+      }
+
+      @keyframes search-bounce {
+        0%, 100% { transform: translateX(0); }
+        35% { transform: translateX(-4px); }
+        70% { transform: translateX(3px); }
       }
 
       /* Tag filter dropdown */
@@ -281,8 +280,7 @@ function preview(content: string) {
       <a href="/" class="header__brand">Prompt Library</a>
 
       <!-- Search bar -->
-      <form class="search-bar" method="get" action="/">
-        {tags && tags.map((t) => <input type="hidden" name="tags" value={t} />)}
+      <form class="search-bar" method="get" action="/" onsubmit="return false">
         <input
           type="search"
           name="q"
@@ -290,7 +288,6 @@ function preview(content: string) {
           value={q ?? ''}
           aria-label="Search prompts"
         />
-        <button type="submit">Search</button>
       </form>
 
       <!-- Tag filter -->
@@ -424,6 +421,36 @@ function preview(content: string) {
           setTimeout(() => { btn.textContent = prev; }, 1500);
         });
       });
+
+      // Reactive search
+      const searchInput = document.querySelector('.search-bar input');
+      if (searchInput instanceof HTMLInputElement) {
+        let searchTimer: ReturnType<typeof setTimeout> | undefined;
+        let pendingQuery = searchInput.value.trim();
+
+        const navigateToQuery = (query: string) => {
+          const currentUrl = new URL(window.location.href);
+          const currentQuery = currentUrl.searchParams.get('q') ?? '';
+          if (query === currentQuery || query === pendingQuery) return;
+
+          pendingQuery = query;
+          currentUrl.searchParams.delete('q');
+          if (query) currentUrl.searchParams.set('q', query);
+          window.location.assign(currentUrl.toString());
+        };
+
+        searchInput.addEventListener('input', () => {
+          const query = searchInput.value.trim();
+          if (searchTimer) clearTimeout(searchTimer);
+          if (query && query.length < 3) return;
+
+          searchInput.classList.remove('is-bouncing');
+          void searchInput.offsetWidth;
+          searchInput.classList.add('is-bouncing');
+
+          searchTimer = setTimeout(() => navigateToQuery(query), query ? 300 : 0);
+        });
+      }
 
       // Tag filter dropdown toggle
       const toggle = document.getElementById('tag-filter-toggle');

@@ -53,6 +53,15 @@ describe('Listing page', () => {
     expect(html).toBeTruthy();
   });
 
+  it('renders a reactive search input without a Search button', async () => {
+    const html = await renderListing(db);
+
+    expect(html).toMatch(/<input[^>]+type="search"/);
+    expect(html).not.toMatch(/<button[^>]*>Search<\/button>/);
+    const source = readFileSync(new URL('./index.astro', import.meta.url), 'utf8');
+    expect(source).toContain('search-bounce');
+  });
+
   it('stacks the authenticated empty-state message and action', async () => {
     const container = await AstroContainer.create();
     const html = await container.renderToString(IndexPage, {
