@@ -280,7 +280,7 @@ function preview(content: string) {
       <a href="/" class="header__brand">Prompt Library</a>
 
       <!-- Search bar -->
-      <form class="search-bar" method="get" action="/">
+      <form class="search-bar" method="get" action="/" onsubmit="return false">
         <input
           type="search"
           name="q"
@@ -426,7 +426,7 @@ function preview(content: string) {
       const searchInput = document.querySelector('.search-bar input');
       if (searchInput instanceof HTMLInputElement) {
         let searchTimer: ReturnType<typeof setTimeout> | undefined;
-        let pendingQuery: string | undefined;
+        let pendingQuery = searchInput.value.trim();
 
         const navigateToQuery = (query: string) => {
           const currentUrl = new URL(window.location.href);
