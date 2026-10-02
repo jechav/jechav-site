@@ -94,4 +94,15 @@ describe('Listing page', () => {
     expect(html).toContain('class="prompt-card"');
     expect(html).toContain('data-prompt=');
   });
+
+  it('animates both prompt modals with @starting-style transitions', () => {
+    for (const name of ['PromptModal', 'PromptViewModal']) {
+      const source = readFileSync(
+        new URL(`../components/${name}.astro`, import.meta.url),
+        'utf8',
+      );
+      expect(source).toContain('@starting-style');
+      expect(source).toContain('allow-discrete');
+    }
+  });
 });

@@ -30,6 +30,47 @@
     backdrop-filter: blur(2px);
   }
 
+  dialog {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+    transition:
+      opacity 180ms ease-out,
+      transform 180ms ease-out,
+      overlay 180ms allow-discrete,
+      display 180ms allow-discrete;
+  }
+
+  dialog[open] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @starting-style {
+    dialog[open] {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+  }
+
+  dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity 180ms ease-out,
+      overlay 180ms allow-discrete,
+      display 180ms allow-discrete;
+  }
+
+  dialog[open]::backdrop { opacity: 1; }
+
+  @starting-style {
+    dialog[open]::backdrop { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    dialog,
+    dialog::backdrop { transition: none; }
+  }
+
   .modal-inner {
     padding: 2rem;
     display: flex;
