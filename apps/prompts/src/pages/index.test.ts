@@ -71,4 +71,27 @@ describe('Listing page', () => {
 
     expect(modalSource).toContain('.delete-confirm[hidden] { display: none; }');
   });
+
+  it('renders the read-only view modal, not the edit form, for signed-out visitors', async () => {
+    db.createPrompt('Write a poem', 'Write a short haiku about autumn.', ['writing']);
+
+    const html = await renderListing(db);
+
+    expect(html).toContain('id="prompt-view-modal"');
+    expect(html).not.toContain('id="prompt-form"');
+    expect(html).toContain('prompt-card__copy');
+  });
+
+  it('renders the edit modal and clickable cards when signed in', async () => {
+    db.createPrompt('Write a poem', 'Write a short haiku about autumn.', ['writing']);
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(IndexPage, {
+      locals: { db, isAuthenticated: true },
+    });
+
+    expect(html).toContain('id="prompt-form"');
+    expect(html).not.toContain('id="prompt-view-modal"');
+    expect(html).toContain('class="prompt-card"');
+    expect(html).toContain('data-prompt=');
+  });
 });

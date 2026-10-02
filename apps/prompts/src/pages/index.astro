@@ -1,6 +1,7 @@
 ---
 import type { createDB } from '../lib/db';
 import PromptModal from '../components/PromptModal.astro';
+import PromptViewModal from '../components/PromptViewModal.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
 const db   = Astro.locals.db as ReturnType<typeof createDB>;
@@ -207,7 +208,9 @@ function preview(content: string) {
         transition: box-shadow 0.15s;
       }
 
+      .prompt-card { cursor: pointer; }
       .prompt-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+      .prompt-card:focus-visible { outline: 2px solid #555; outline-offset: 2px; }
 
       .prompt-card__header {
         display: flex;
@@ -228,8 +231,7 @@ function preview(content: string) {
         gap: 0.4rem;
       }
 
-      .prompt-card__copy,
-      .prompt-card__edit {
+      .prompt-card__copy {
         background: none;
         border: none;
         cursor: pointer;
@@ -241,7 +243,7 @@ function preview(content: string) {
         transition: color 0.15s;
       }
 
-      .prompt-card__edit:hover { color: #333; }
+      .prompt-card__copy:hover { color: #333; }
 
       .prompt-card__preview {
         font-size: 0.8125rem;
@@ -359,7 +361,13 @@ function preview(content: string) {
       ) : (
         <ul class="prompt-grid">
           {prompts.map((prompt) => (
-            <li class="prompt-card">
+            <li
+              class="prompt-card"
+              role="button"
+              tabindex="0"
+              aria-label={`Open ${prompt.title}`}
+              data-prompt={JSON.stringify(prompt)}
+            >
               <div class="prompt-card__header">
                 <h2 class="prompt-card__title">{prompt.title}</h2>
                 <div class="prompt-card__actions">
@@ -372,17 +380,6 @@ function preview(content: string) {
                   >
                     ⎘
                   </button>
-                  {auth && (
-                    <button
-                      type="button"
-                      class="prompt-card__edit"
-                      aria-label={`Edit ${prompt.title}`}
-                      data-prompt={JSON.stringify(prompt)}
-                      onclick="window.openPromptModal(JSON.parse(this.dataset.prompt))"
-                    >
-                      ✎
-                    </button>
-                  )}
                 </div>
               </div>
               <p class="prompt-card__preview">{preview(prompt.content)}</p>
@@ -399,17 +396,36 @@ function preview(content: string) {
       )}
     </main>
 
-    {auth && <PromptModal />}
+    {auth ? <PromptModal /> : <PromptViewModal />}
 
     <script>
       // Copy to clipboard
       document.querySelectorAll('.prompt-card__copy').forEach((btn) => {
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', async (event) => {
+          event.stopPropagation();
           const content = (btn as HTMLElement).dataset.content ?? '';
           await navigator.clipboard.writeText(content);
           const prev = btn.textContent;
           btn.textContent = '✓';
           setTimeout(() => { btn.textContent = prev; }, 1500);
+        });
+      });
+
+      // Open prompt modal: edit when signed in, read-only view otherwise
+      document.querySelectorAll<HTMLElement>('.prompt-card').forEach((card) => {
+        const open = () => {
+          const prompt = JSON.parse(card.dataset.prompt ?? '{}');
+          const w = window as any;
+          if (w.openPromptModal) w.openPromptModal(prompt);
+          else w.openPromptViewModal?.(prompt);
+        };
+        card.addEventListener('click', open);
+        card.addEventListener('keydown', (event) => {
+          if (event.target !== card) return;
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            open();
+          }
         });
       });
 

@@ -1,0 +1,147 @@
+---
+// No props — opened programmatically via openPromptViewModal()
+---
+
+<dialog id="prompt-view-modal" aria-labelledby="view-heading">
+  <div class="modal-inner">
+    <h2 id="view-heading" class="modal-heading"></h2>
+    <pre id="view-content" class="view-content"></pre>
+    <ul id="view-tags" class="view-tags"></ul>
+    <div class="modal-footer">
+      <button type="button" id="view-copy-btn" class="btn btn--primary">Copy</button>
+      <button type="button" id="view-close-btn" class="btn btn--ghost">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  dialog {
+    border: none;
+    border-radius: 14px;
+    padding: 0;
+    width: min(100% - 2rem, 560px);
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,.18);
+  }
+
+  dialog::backdrop {
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(2px);
+  }
+
+  .modal-inner {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .modal-heading {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #111;
+  }
+
+  .view-content {
+    font-family: inherit;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: #222;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: #fafafa;
+    border: 1px solid #e2e2e2;
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 50dvh;
+    overflow-y: auto;
+  }
+
+  .view-tags {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0;
+  }
+
+  .view-tags:empty { display: none; }
+
+  .view-tags li {
+    background: #f0f0f0;
+    border-radius: 99px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.8125rem;
+    color: #333;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #efefef;
+  }
+
+  .btn {
+    border: none;
+    border-radius: 8px;
+    padding: 0.55rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn--primary { background: #111; color: #fff; }
+  .btn--primary:hover { opacity: 0.82; }
+
+  .btn--ghost {
+    background: transparent;
+    color: #444;
+    border: 1px solid #d1d1d1;
+  }
+  .btn--ghost:hover { background: #f5f5f5; }
+</style>
+
+<script>
+  const modal    = document.getElementById('prompt-view-modal') as HTMLDialogElement;
+  const heading  = document.getElementById('view-heading') as HTMLElement;
+  const content  = document.getElementById('view-content') as HTMLElement;
+  const tagList  = document.getElementById('view-tags') as HTMLUListElement;
+  const copyBtn  = document.getElementById('view-copy-btn') as HTMLButtonElement;
+  const closeBtn = document.getElementById('view-close-btn') as HTMLButtonElement;
+
+  let copyTimeout: ReturnType<typeof setTimeout>;
+
+  (window as any).openPromptViewModal = function (prompt: {
+    title: string; content: string; tags: string[];
+  }) {
+    heading.textContent = prompt.title;
+    content.textContent = prompt.content;
+    tagList.replaceChildren(
+      ...prompt.tags.map((tag) => {
+        const li = document.createElement('li');
+        li.textContent = tag;
+        return li;
+      }),
+    );
+    clearTimeout(copyTimeout);
+    copyBtn.textContent = 'Copy';
+    modal.showModal();
+    copyBtn.focus();
+  };
+
+  copyBtn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(content.textContent ?? '');
+    copyBtn.textContent = 'Copied ✓';
+    clearTimeout(copyTimeout);
+    copyTimeout = setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+  });
+
+  closeBtn.addEventListener('click', () => modal.close());
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.close();
+  });
+</script>

@@ -288,8 +288,13 @@
     activeTags.forEach((tag) => {
       const chip = document.createElement('span');
       chip.className = 'tag-chip';
-      chip.innerHTML = `${tag} <button type="button" class="tag-chip__remove" aria-label="Remove ${tag}">×</button>`;
-      chip.querySelector('button')!.addEventListener('click', () => {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'tag-chip__remove';
+      removeBtn.setAttribute('aria-label', `Remove ${tag}`);
+      removeBtn.textContent = '×';
+      chip.append(`${tag} `, removeBtn);
+      removeBtn.addEventListener('click', () => {
         activeTags = activeTags.filter((t) => t !== tag);
         renderChips();
         syncTagsHidden();
