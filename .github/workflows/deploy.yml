@@ -14,8 +14,8 @@ jobs:
         env:
           PATH_SSH_GH_KEY: ${{ secrets.PATH_SSH_GH_KEY }}
         with:
-          host: ${{ secrets.DROPLET_HOST }}
-          username: ${{ secrets.DROPLET_USER }}
+          host: ${{ secrets.ECHAMOR_DROPLET_HOST }}
+          username: ${{ secrets.ECHAMOR_DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           envs: PATH_SSH_GH_KEY
           script: |
