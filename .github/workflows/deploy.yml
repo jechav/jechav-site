@@ -15,7 +15,7 @@ jobs:
           ECHAMOR_GA_SSH_PATH_KEY: ${{ secrets.ECHAMOR_GA_SSH_PATH_KEY }}
         with:
           host: ${{ secrets.ECHAMOR_DROPLET_HOST }}
-          username: ${{ secrets.ECHAMOR_DROPLET_HOST }}
+          username: ${{ secrets.ECHAMOR_DROPLET_USER }}
           key: ${{ secrets.ECHAMOR_GA_SSH_PRIVATE_KEY }}
           envs: ECHAMOR_GA_SSH_PATH_KEY
           script: |
