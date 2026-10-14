@@ -11,18 +11,15 @@ jobs:
     steps:
       - name: Deploy to DigitalOcean droplet
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          ECHAMOR_GA_SSH_PATH_KEY: ${{ secrets.ECHAMOR_GA_SSH_PATH_KEY }}
         with:
           host: ${{ secrets.ECHAMOR_DROPLET_HOST }}
           username: ${{ secrets.ECHAMOR_DROPLET_USER }}
           key: ${{ secrets.ECHAMOR_GA_SSH_PRIVATE_KEY }}
-          envs: ECHAMOR_GA_SSH_PATH_KEY
           script: |
             set -e
             cd ${{ secrets.REPO_PATH }}
-            export GIT_SSH_COMMAND="ssh -i \"$ECHAMOR_GA_SSH_PATH_KEY\" -o IdentitiesOnly=yes"
             git pull origin main
             docker compose up --build -d
             # Remove dangling images left by the build
             docker image prune -f
+            echo "Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
