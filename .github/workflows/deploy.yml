@@ -22,4 +22,3 @@ jobs:
             docker compose up --build -d
             # Remove dangling images left by the build
             docker image prune -f
-            echo "Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
