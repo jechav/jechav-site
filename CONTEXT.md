@@ -1,6 +1,6 @@
 # Prompt Library
 
-A personal subsite (subdomain of jechav.dev) for storing, browsing, and managing reusable AI prompts. The listing is publicly viewable; creating and editing requires authentication.
+A personal subsite (subdomain of jechav.me) for storing, browsing, and managing reusable AI prompts. The listing is publicly viewable; creating and editing requires authentication.
 
 ## Language
 

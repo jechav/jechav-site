@@ -9,8 +9,8 @@ services:
 
   prompts:
     build:
-      context: ./apps/prompts
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/prompts/Dockerfile
     ports:
       - "4321:4321"
     env_file:

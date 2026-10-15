@@ -5,6 +5,7 @@ node_modules
 apps/*/node_modules
 apps/*/dist
 apps/*/prompts.db*
+apps/*/.env*
 *.md
 .env*
 .DS_Store

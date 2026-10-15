@@ -8,7 +8,7 @@ This is a modern Next.js 16.1.1 project using the App Router, React 19, TypeScri
 - **React**: v19.2.3 (latest with JSX transform in tsconfig)
 - **Styling**: Tailwind CSS v4 with PostCSS plugin (`@tailwindcss/postcss`)
 - **Content**: MDX with `next-mdx-remote`, `gray-matter` for frontmatter, `rehype-pretty-code` for syntax highlighting
-- **TypeScript**: Strict mode enabled, path alias `@/*` maps to project root
+- **TypeScript**: Strict mode enabled, path alias `@/*` maps to `./src/*`
 - **Node**: Requires >=24.11.0 (see `package.json` engines field)
 - **Font**: Geist Sans and Geist Mono from `next/font/google`
 
@@ -24,7 +24,7 @@ This is a modern Next.js 16.1.1 project using the App Router, React 19, TypeScri
 - **`src/lib/posts.ts`**: Server-side utilities for reading/parsing blog posts from filesystem
 - **`src/mdx-components.tsx`**: Custom MDX component mappings for styled rendering
 - **`public/`**: Static assets served from root path
-- **Path aliases**: Use `@/` to import from project root (configured in tsconfig.json)
+- **Path aliases**: Use `@/` to import from `src/` (configured in tsconfig.json)
 
 ## Styling Conventions
 - **Tailwind v4 syntax**: Use `@import "tailwindcss"` (not v3's `@tailwind` directives)

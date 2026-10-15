@@ -1,6 +1,6 @@
 # Prompt Library
 
-Personal prompt management subsite for `prompts.jechav.dev`.
+Personal prompt management subsite for `prompts.jechav.me`.
 
 ## Stack
 
@@ -46,6 +46,6 @@ Deploy to any **persistent Node.js server** (Railway, Fly.io, Render, VPS).
 Do **not** deploy to serverless platforms (Vercel, Netlify) — SQLite requires
 a persistent filesystem.
 
-Set the two env vars above and point your DNS for `prompts.jechav.dev` at the
+Set the two env vars above and point your DNS for `prompts.jechav.me` at the
 server. Use a reverse proxy (nginx, Caddy) to terminate TLS and forward to the
 Node process.

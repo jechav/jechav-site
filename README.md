@@ -87,8 +87,8 @@ docker compose up --build
 
 ### Adding New Subapps
 
-1. Create app in `apps/myapp/` with `package.json` and `Dockerfile`
-2. Add service to `docker-compose.yml` with new port
+1. Create app in `apps/myapp/` with `package.json` and `Dockerfile`. Build from the repo root (all apps share the root `package-lock.json`), and add a `COPY apps/myapp/package.json` stub line to the root `Dockerfile` so `npm ci` can resolve the workspace
+2. Add service to `docker-compose.yml` with new port (`context: .`, `dockerfile: apps/myapp/Dockerfile`)
 3. Add Caddyfile block in `deploy/Caddyfile.snippet` for the subdomain
 4. Merge into `main` — deployment is automatic
 

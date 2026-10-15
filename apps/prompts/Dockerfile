@@ -1,3 +1,6 @@
+# Build context is the repo root (see docker-compose.yml) so this image installs
+# from the shared root package-lock.json, the same tree used in local dev.
+
 # ── builder ─────────────────────────────────────────────────────────────────
 FROM node:24-alpine AS builder
 WORKDIR /app
@@ -5,11 +8,13 @@ WORKDIR /app
 # Build deps for better-sqlite3 native addon
 RUN apk add --no-cache python3 make g++
 
+# Root manifest + lockfile and this workspace's manifest so npm ci resolves it
 COPY package.json package-lock.json ./
-RUN npm ci
+COPY apps/prompts/package.json ./apps/prompts/package.json
+RUN npm ci --workspace @jechav/prompts
 
-COPY . .
-RUN npm run build
+COPY apps/prompts ./apps/prompts
+RUN npm run build --workspace @jechav/prompts
 
 # ── runner ───────────────────────────────────────────────────────────────────
 FROM node:24-alpine AS runner
@@ -25,10 +30,10 @@ ENV PORT=4321
 RUN addgroup --system --gid 1001 nodejs && \
     adduser  --system --uid 1001 astro
 
-# Copy Astro standalone output and production node_modules (incl. native .node files)
-COPY --from=builder /app/dist ./dist
+# Copy Astro standalone output and node_modules (incl. native .node files)
+COPY --from=builder /app/apps/prompts/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY apps/prompts/docker-entrypoint.sh /docker-entrypoint.sh
 
 RUN chmod +x /docker-entrypoint.sh && \
     mkdir -p /app/data && \
